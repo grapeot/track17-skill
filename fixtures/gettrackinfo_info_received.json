@@ -1,0 +1,250 @@
+{
+  "code": 0,
+  "data": {
+    "accepted": [
+      {
+        "number": "123456789012",
+        "carrier": 100003,
+        "param": null,
+        "tag": "",
+        "track_info": {
+          "shipping_info": {
+            "shipper_address": {
+              "country": "US",
+              "state": "WA",
+              "city": "Redmond",
+              "street": null,
+              "postal_code": null,
+              "coordinates": {
+                "longitude": null,
+                "latitude": null
+              }
+            },
+            "recipient_address": {
+              "country": "US",
+              "state": "CA",
+              "city": "San Jose",
+              "street": null,
+              "postal_code": null,
+              "coordinates": {
+                "longitude": null,
+                "latitude": null
+              }
+            }
+          },
+          "latest_status": {
+            "status": "InfoReceived",
+            "sub_status": "InfoReceived",
+            "sub_status_descr": null
+          },
+          "latest_event": {
+            "time_iso": "2026-09-17T11:40:22-05:00",
+            "time_utc": "2026-09-17T16:40:22Z",
+            "time_raw": {
+              "date": "2026-09-17",
+              "time": "11:40:22",
+              "timezone": "-05:00"
+            },
+            "description": "Shipment information sent to FedEx",
+            "location": null,
+            "stage": "InfoReceived",
+            "sub_status": "InfoReceived",
+            "address": {
+              "country": null,
+              "state": null,
+              "city": null,
+              "street": null,
+              "postal_code": null,
+              "coordinates": {
+                "longitude": null,
+                "latitude": null
+              }
+            }
+          },
+          "time_metrics": {
+            "days_after_order": 7,
+            "days_of_transit": 0,
+            "days_of_transit_done": 0,
+            "days_after_last_update": 7,
+            "estimated_delivery_date": {
+              "source": null,
+              "from": null,
+              "to": null
+            }
+          },
+          "milestone": [
+            {
+              "key_stage": "InfoReceived",
+              "time_iso": "2026-09-17T11:40:22-05:00",
+              "time_utc": "2026-09-17T16:40:22Z",
+              "time_raw": {
+                "date": "2026-09-17",
+                "time": "11:40:22",
+                "timezone": "-05:00"
+              }
+            },
+            {
+              "key_stage": "PickedUp",
+              "time_iso": null,
+              "time_utc": null,
+              "time_raw": {
+                "date": null,
+                "time": null,
+                "timezone": null
+              }
+            },
+            {
+              "key_stage": "Departure",
+              "time_iso": null,
+              "time_utc": null,
+              "time_raw": {
+                "date": null,
+                "time": null,
+                "timezone": null
+              }
+            },
+            {
+              "key_stage": "Arrival",
+              "time_iso": null,
+              "time_utc": null,
+              "time_raw": {
+                "date": null,
+                "time": null,
+                "timezone": null
+              }
+            },
+            {
+              "key_stage": "AvailableForPickup",
+              "time_iso": null,
+              "time_utc": null,
+              "time_raw": {
+                "date": null,
+                "time": null,
+                "timezone": null
+              }
+            },
+            {
+              "key_stage": "OutForDelivery",
+              "time_iso": null,
+              "time_utc": null,
+              "time_raw": {
+                "date": null,
+                "time": null,
+                "timezone": null
+              }
+            },
+            {
+              "key_stage": "Delivered",
+              "time_iso": null,
+              "time_utc": null,
+              "time_raw": {
+                "date": null,
+                "time": null,
+                "timezone": null
+              }
+            },
+            {
+              "key_stage": "Returning",
+              "time_iso": null,
+              "time_utc": null,
+              "time_raw": {
+                "date": null,
+                "time": null,
+                "timezone": null
+              }
+            },
+            {
+              "key_stage": "Returned",
+              "time_iso": null,
+              "time_utc": null,
+              "time_raw": {
+                "date": null,
+                "time": null,
+                "timezone": null
+              }
+            }
+          ],
+          "misc_info": {
+            "risk_factor": 0,
+            "service_type": "FedEx 2Day",
+            "weight_raw": "0.45 KG",
+            "weight_kg": "0.45",
+            "pieces": "1",
+            "dimensions": "7x5x3 IN",
+            "customer_number": null,
+            "reference_number": "1234567890~123456789012~FX",
+            "local_number": null,
+            "local_provider": null,
+            "local_key": 0
+          },
+          "tracking": {
+            "providers_hash": -686374653,
+            "providers": [
+              {
+                "provider": {
+                  "key": 100003,
+                  "name": "FedEx",
+                  "alias": "FedEx 联邦快递（FedEx）",
+                  "tel": "+1 800-463-3339",
+                  "homepage": "https://www.fedex.com/",
+                  "country": "US"
+                },
+                "provider_lang": "en",
+                "service_type": "FedEx 2Day",
+                "latest_sync_status": "Success",
+                "latest_sync_time": "2026-09-23T22:06:00Z",
+                "events_hash": -1626422354,
+                "provider_tips": "Label created, Please check back later for shipment status or subscribe for e-mail notifications",
+                "events": [
+                  {
+                    "time_iso": "2026-09-17T11:40:22-05:00",
+                    "time_utc": "2026-09-17T16:40:22Z",
+                    "time_raw": {
+                      "date": "2026-09-17",
+                      "time": "11:40:22",
+                      "timezone": "-05:00"
+                    },
+                    "description": "Shipment information sent to FedEx",
+                    "location": null,
+                    "stage": "InfoReceived",
+                    "sub_status": "InfoReceived",
+                    "address": {
+                      "country": null,
+                      "state": null,
+                      "city": null,
+                      "street": null,
+                      "postal_code": null,
+                      "coordinates": {
+                        "longitude": null,
+                        "latitude": null
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "lang": null,
+        "destination_postal_code": null,
+        "origin_country": "US",
+        "origin_city": null,
+        "origin_state": null,
+        "origin_postal_code": null,
+        "destination_country": null,
+        "destination_city": null,
+        "destination_state": null,
+        "service_type": null,
+        "ship_date": null,
+        "shipper": null,
+        "consignee": null,
+        "phone_number_last_4": null,
+        "phone_number": null,
+        "cpf_or_cnpj": null,
+        "special_tracking_info": null,
+        "labels": null
+      }
+    ],
+    "rejected": []
+  }
+}

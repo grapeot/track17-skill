@@ -1,0 +1,27 @@
+[project]
+name = "track17-skill"
+version = "0.1.0"
+description = "One-stop package tracking CLI backed by the 17TRACK Tracking API (v2.4)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+track17_skill = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: opt-in live API tests (set RUN_TRACK17_INTEGRATION=1 plus SEVENTEENTRACK_KEY and TRACK17_TEST_NUMBER)",
+]
