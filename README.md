@@ -246,6 +246,10 @@ To refresh the bundled dataset:
 python scripts/refresh_carriers.py
 ```
 
+## Disclaimer
+
+track17 is an independent open-source project and is not affiliated with, endorsed by, sponsored by, or officially associated with 17TRACK. It integrates the 17TRACK Tracking API as a third-party service, and 17TRACK is a trademark of its respective owner. Tracking data availability, status updates, quotas, and service terms are governed entirely by 17TRACK.
+
 ## License
 
 MIT
