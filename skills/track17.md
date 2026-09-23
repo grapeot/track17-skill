@@ -116,6 +116,7 @@ Shipping labels created recently often show `status: "InfoReceived"` with empty 
 - **Pull model only**: Implements client-initiated polling. No webhook endpoints or SMS push handlers. Users needing push callbacks should be directed to 17TRACK's native webhook configuration.
 - **No external notifications**: Does not send emails, chat messages, or operating system alerts.
 - **No persistent daemon**: Operates statelessly per command; does not manage background scheduling or queues.
+- **Independent third-party integration**: track17 is not affiliated with, endorsed by, or sponsored by 17TRACK; the 17TRACK Tracking API is used as a third-party service under 17TRACK's own terms.
 
 ## Note on Private Overlays
 
