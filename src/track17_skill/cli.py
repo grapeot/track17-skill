@@ -27,6 +27,7 @@ from .client import (
     CODE_NOT_REGISTERED,
     CODES_AUTH,
     CODES_QUOTA,
+    CODES_SERVER,
     ApiError,
     KeyMissingError,
     NetworkError,
@@ -77,9 +78,9 @@ def classify_rejected(command, rejected) -> int:
 def classify_exception(exc) -> tuple:
     """Map an exception to (exit_code, error_dict) with raw detail."""
     if isinstance(exc, KeyMissingError):
-        return EXIT_USAGE, {"message": str(exc)}
+        return EXIT_USAGE, {"type": "missing_key", "message": str(exc)}
     if isinstance(exc, NetworkError):
-        return EXIT_SERVER, {"message": str(exc)}
+        return EXIT_SERVER, {"type": "network", "message": str(exc)}
     if isinstance(exc, ApiError):
         err = {
             "http_status": exc.http_status,
@@ -88,11 +89,11 @@ def classify_exception(exc) -> tuple:
             "raw_body": exc.raw_body[:2000],
         }
         if exc.http_status in (401, 403) or exc.api_code in CODES_AUTH:
-            return EXIT_AUTH, err
+            return EXIT_AUTH, {**err, "type": "auth"}
         if exc.http_status == 429 or exc.api_code in CODES_QUOTA:
-            return EXIT_QUOTA, err
-        return EXIT_SERVER, err
-    return EXIT_SERVER, {"message": f"unexpected error: {exc!r}"}
+            return EXIT_QUOTA, {**err, "type": "quota"}
+        return EXIT_SERVER, {**err, "type": "server"}
+    return EXIT_SERVER, {"type": "internal", "message": f"unexpected error: {exc!r}"}
 
 
 def run_api(command, input_, endpoint, payload, key, timeout=60.0, transform=None) -> tuple:
@@ -107,12 +108,15 @@ def run_api(command, input_, endpoint, payload, key, timeout=60.0, transform=Non
         top_code = body.get("code")
         if top_code is not None and top_code != 0:
             if top_code in CODES_AUTH:
-                code = EXIT_AUTH
+                code, etype = EXIT_AUTH, "auth"
             elif top_code in CODES_QUOTA:
-                code = EXIT_QUOTA
+                code, etype = EXIT_QUOTA, "quota"
+            elif top_code in CODES_SERVER:
+                code, etype = EXIT_SERVER, "server"
             else:
-                code = EXIT_NO_DATA
+                code, etype = EXIT_NO_DATA, "no_data"
             err = {
+                "type": etype,
                 "http_status": status,
                 "api_code": top_code,
                 "message": body.get("message") or "",
@@ -177,8 +181,9 @@ def cmd_get(args, key):
                 code, env = run_api(
                     "get", input_, "gettrackinfo", [payload], key, transform=summarize_gettrackinfo
                 )
-                if env.get("data") is not None:
-                    env["data"]["auto_registered"] = True
+                data = env.get("data")
+                if isinstance(data, dict) and data.get("summary") is not None:
+                    data["auto_registered"] = True
     return code, env
 
 
@@ -208,23 +213,47 @@ def cmd_carriers(args):
     return code, _envelope("carriers", {"action": "get", "code": args.code}, data, None)
 
 
+class _Parser(argparse.ArgumentParser):
+    """argparse that honors the envelope contract on usage errors too."""
+
+    def error(self, message):
+        print(
+            json.dumps(
+                _envelope("usage", None, None, {"type": "usage", "message": message}),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        raise SystemExit(EXIT_USAGE)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
+    p = _Parser(
         prog="track17",
         description="One-stop package tracking via the 17TRACK Tracking API (v2.4).",
     )
     p.add_argument("--version", action="version", version=f"track17 {__version__}")
-    p.add_argument(
-        "--env-file",
-        default=None,
-        help="path to a .env file defining SEVENTEENTRACK_KEY (default: ./.env after the env var)",
-    )
-    sub = p.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("check", help="validate the API key and list registered numbers (free)")
+    env_file_help = (
+        "path to a .env file defining SEVENTEENTRACK_KEY "
+        "(explicit file beats ./.env; the env var beats both)"
+    )
+    p.add_argument("--env-file", default=None, help=env_file_help)
+
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--env-file", default=None, help=env_file_help)
+
+    sub = p.add_subparsers(dest="command", required=True, parser_class=_Parser)
+
+    sub.add_parser(
+        "check",
+        help="validate the API key and list registered numbers (free)",
+        parents=[common],
+    )
 
     reg = sub.add_parser(
-        "register", help="register a tracking number (consumes 1 quota the first time only)"
+        "register", help="register a tracking number (consumes 1 quota the first time only)",
+        parents=[common],
     )
     reg.add_argument("number", help="tracking number, 5-50 letters/digits/hyphens")
     reg.add_argument("--carrier", type=int, default=None, help="carrier code, e.g. 100003 (FedEx)")
@@ -235,7 +264,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--destination-postal-code", dest="destination_postal_code", default=None, help="destination postal code"
     )
 
-    get = sub.add_parser("get", help="get tracking details for a registered number (free)")
+    get = sub.add_parser(
+        "get", help="get tracking details for a registered number (free)", parents=[common]
+    )
     get.add_argument("number")
     get.add_argument("--carrier", type=int, default=None, help="carrier code if auto-detection fails")
     get.add_argument("--lang", default=None, help="translation language code")
@@ -245,12 +276,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="if the number is not registered yet, register it (consumes 1 quota) and fetch again",
     )
 
-    lst = sub.add_parser("list", help="list registered numbers with current status (free)")
+    lst = sub.add_parser(
+        "list", help="list registered numbers with current status (free)", parents=[common]
+    )
     lst.add_argument("--status", default=None, help="filter by package status, e.g. InTransit / Delivered")
     lst.add_argument("--page", type=int, default=1, help="page number (40 items per page max)")
     lst.add_argument("--number", default=None, help="filter by tracking number(s), comma separated, 200 max")
 
-    car = sub.add_parser("carriers", help="offline carrier-code lookup (no API call, free)")
+    car = sub.add_parser(
+        "carriers", help="offline carrier-code lookup (no API call, free)", parents=[common]
+    )
     car_sub = car.add_subparsers(dest="carriers_action", required=True)
     car_search = car_sub.add_parser("search", help="case-insensitive name search")
     car_search.add_argument("query")
@@ -269,7 +304,9 @@ def main(argv=None) -> int:
         try:
             key = load_key(args.env_file)
         except KeyMissingError as exc:
-            code, env = EXIT_USAGE, _envelope(args.command, vars(args), None, {"message": str(exc)})
+            code, env = EXIT_USAGE, _envelope(
+                args.command, vars(args), None, {"type": "missing_key", "message": str(exc)}
+            )
         else:
             handler = {
                 "check": cmd_check,

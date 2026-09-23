@@ -23,6 +23,7 @@ def assert_envelope_shape(env):
 def test_classify_error_auth_http401():
     code, err = cli.classify_exception(ApiError(401, -18010002, "Invalid security key.", '{"code": -18010002}'))
     assert code == cli.EXIT_AUTH
+    assert err["type"] == "auth"
     assert err["http_status"] == 401
     assert err["api_code"] == -18010002
     assert err["raw_body"]
@@ -37,6 +38,7 @@ def test_classify_error_quota_http429():
 def test_classify_error_network():
     code, err = cli.classify_exception(NetworkError("timed out"))
     assert code == cli.EXIT_SERVER
+    assert err["type"] == "network"
     assert "timed out" in err["message"]
 
 
@@ -81,6 +83,8 @@ def test_normalize_gettrackinfo_real_fixture():
     assert s["service_type"] == "FedEx 2Day"
     assert s["route"]["origin"] == "Redmond, WA"
     assert s["route"]["destination"] == "San Jose, CA"
+    assert s["weight_kg"] == 0.45
+    assert isinstance(s["weight_kg"], float)
     assert s["days_since_last_update"] == 7
     assert s["provider_tips"].startswith("Label created")
     assert s["event_count"] == 1
@@ -95,6 +99,21 @@ def test_normalize_rejected_only_yields_null_summary():
     out = normalize.summarize_gettrackinfo(resp)
     assert out["summary"] is None
     assert out["rejected"][0]["error"]["code"] == -18019909
+
+
+def test_normalize_survives_none_items():
+    resp = {"code": 0, "data": {"accepted": [None], "rejected": []}}
+    assert normalize.summarize_gettrackinfo(resp)["summary"] is None
+    resp = {"code": 0, "data": {"accepted": [{
+        "number": "1", "carrier": 1,
+        "track_info": {"tracking": {"providers": [None, {"events": [None]}]}}}
+    ]}}
+    s = normalize.summarize_gettrackinfo(resp)["summary"]
+    assert s["event_count"] == 0
+    resp = {"code": 0, "data": {"accepted": [None, {"number": "9"}]}}
+    assert normalize.summarize_gettracklist(resp)["items"] == [
+        {"number": "9", "carrier_code": None, "status": None, "sub_status": None, "sync_status": None}
+    ]
 
 
 def test_normalize_events_capped_and_newest_first():
@@ -124,11 +143,27 @@ def test_load_key_env_file_fallback(monkeypatch, tmp_path):
     assert load_key() == "from-file"
 
 
-def test_load_key_explicit_env_file(monkeypatch, tmp_path):
+def test_load_key_explicit_env_file_beats_cwd(monkeypatch, tmp_path):
+    # Explicit --env-file wins over ./.env (env var still wins over both).
+    monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("SEVENTEENTRACK_KEY", raising=False)
+    (tmp_path / ".env").write_text("SEVENTEENTRACK_KEY=from-cwd\n")
     other = tmp_path / "elsewhere.env"
     other.write_text("SEVENTEENTRACK_KEY=explicit\n")
     assert load_key(str(other)) == "explicit"
+    assert load_key() == "from-cwd"
+
+
+def test_load_key_env_file_parsing_variants(monkeypatch, tmp_path):
+    monkeypatch.delenv("SEVENTEENTRACK_KEY", raising=False)
+    for line in (
+        "export SEVENTEENTRACK_KEY=with-export",
+        'SEVENTEENTRACK_KEY="quoted-value"',
+        "SEVENTEENTRACK_KEY=with-comment # trailing note",
+    ):
+        env = tmp_path / "k.env"
+        env.write_text(line + "\n")
+        assert load_key(str(env)) in ("with-export", "quoted-value", "with-comment"), line
 
 
 def test_load_key_missing(monkeypatch, tmp_path):
@@ -174,8 +209,35 @@ def test_run_api_top_level_error_code(monkeypatch):
     code, env = cli.run_api("register", {"number": "1"}, "register", [{"number": "1"}], "k",
                             transform=normalize.summarize_register)
     assert code == cli.EXIT_QUOTA
+    assert env["error"]["type"] == "quota"
     assert env["error"]["api_code"] == -18019908
     assert env["error"]["message"]
+
+
+def test_run_api_top_level_server_error_is_13(monkeypatch):
+    # -18010003 arrives with HTTP 200 and must map to 13, not 12.
+    _patch_call(monkeypatch, result=(200, {"code": -18010003, "message": "Internal service error."}))
+    code, env = cli.run_api("check", {}, "gettracklist", {}, "k",
+                            transform=normalize.summarize_gettracklist)
+    assert code == cli.EXIT_SERVER
+    assert env["error"]["type"] == "server"
+    assert env["error"]["api_code"] == -18010003
+
+
+def test_read_timeout_becomes_network_error_envelope(monkeypatch):
+    # A socket read timeout escapes urllib's URLError wrapper; the client
+    # must convert it to NetworkError so main() still emits an envelope.
+    import track17_skill.client as client_mod
+
+    def fake_urlopen(*args, **kwargs):
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(client_mod.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(NetworkError):
+        client_mod.api_call("gettrackinfo", [{}], "k", timeout=0.5)
+    code, err = cli.classify_exception(NetworkError("timed out"))
+    assert code == cli.EXIT_SERVER
+    assert err["type"] == "network"
 
 
 def test_run_api_register_idempotent_noop(monkeypatch):
@@ -253,3 +315,73 @@ def test_cli_version(capsys):
         cli.main(["--version"])
     assert exc.value.code == 0
     assert "track17" in capsys.readouterr().out
+
+
+def test_cli_usage_error_emits_envelope(capsys, monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["get"])  # missing the required number
+    assert exc.value.code == cli.EXIT_USAGE
+    env = json.loads(capsys.readouterr().out)
+    assert_envelope_shape(env)
+    assert env["error"]["type"] == "usage"
+
+
+def test_cli_carriers_get_known_code(capsys):
+    code = cli.main(["carriers", "get", "100003"])
+    assert code == cli.EXIT_OK
+    env = json.loads(capsys.readouterr().out)
+    assert env["data"]["carrier"]["name"] == "FedEx"
+
+
+GET_FIXTURE_BODY = _load_fixture()
+REJECTED_NOT_REGISTERED = {
+    "code": 0,
+    "data": {"accepted": [], "rejected": [
+        {"number": "999", "error": {"code": -18019902, "message": "not registered yet"}}]},
+}
+REJECTED_NO_DATA_YET = {
+    "code": 0,
+    "data": {"accepted": [], "rejected": [
+        {"number": "999", "error": {"code": -18019909, "message": "No tracking info at the moment."}}]},
+}
+REGISTER_OK = {"code": 0, "data": {"accepted": [{"number": "999", "carrier": 100003}], "rejected": []}}
+
+
+def _seq_call(monkeypatch, responses):
+    """Serve a sequence of (status, body) responses, one per api_call."""
+    it = iter(responses)
+    def fake(endpoint, payload, key, timeout=60):
+        return next(it)
+    monkeypatch.setattr(cli, "api_call", fake)
+
+
+def _args_get_auto_register():
+    return type("A", (), {"number": "999", "auto_register": True, "carrier": None, "lang": None})()
+
+
+def test_get_auto_register_success(monkeypatch, capsys):
+    _seq_call(monkeypatch, [(200, REJECTED_NOT_REGISTERED), (200, REGISTER_OK), (200, GET_FIXTURE_BODY)])
+    code, env = cli.cmd_get(_args_get_auto_register(), "k")
+    assert code == cli.EXIT_OK
+    assert env["data"]["summary"]["status"] == "InfoReceived"
+    assert env["data"]["auto_registered"] is True
+
+
+def test_get_auto_register_still_no_data(monkeypatch, capsys):
+    _seq_call(monkeypatch, [(200, REJECTED_NOT_REGISTERED), (200, REGISTER_OK), (200, REJECTED_NO_DATA_YET)])
+    code, env = cli.cmd_get(_args_get_auto_register(), "k")
+    assert code == cli.EXIT_NO_DATA
+    assert env["data"]["summary"] is None
+    assert "auto_registered" not in (env["data"] or {})
+
+
+def test_get_auto_register_quota_failure_stops(monkeypatch, capsys):
+    _seq_call(monkeypatch, [
+        (200, REJECTED_NOT_REGISTERED),
+        (200, {"code": -18019908, "message": "quotas ran out"}),
+    ])
+    code, env = cli.cmd_get(_args_get_auto_register(), "k")
+    # The original get result stands: not registered, exit 12.
+    assert code == cli.EXIT_NO_DATA
+    assert env["data"]["summary"] is None
