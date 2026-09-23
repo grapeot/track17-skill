@@ -155,6 +155,7 @@ def test_load_key_explicit_env_file_beats_cwd(monkeypatch, tmp_path):
 
 
 def test_load_key_env_file_parsing_variants(monkeypatch, tmp_path):
+    monkeypatch.delenv("SEVENTEENTRACK_KEY", raising=False)
     for line in (
         "export SEVENTEENTRACK_KEY=with-export",
         'SEVENTEENTRACK_KEY="quoted-value"',
