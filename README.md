@@ -130,9 +130,14 @@ Example normalized JSON output:
         "accepted": [
           {
             "number": "123456789012",
-            "carrier": 100003
+            "carrier": 100003,
+            "track_info": {
+              "latest_status": { "status": "InTransit", "sub_status": "InTransit_PickedUp" },
+              "tracking": { "providers": [ { "events": [ "..." ] } ] }
+            }
           }
-        ]
+        ],
+        "rejected": []
       }
     }
   },
@@ -165,8 +170,8 @@ Every command prints a consistent JSON envelope to standard output:
 }
 ```
 
-- **Success**: `data.summary` contains normalized fields; `data.raw` holds the unmodified 17TRACK payload; `error` is `null`.
-- **Failure**: `data` is `null`; `error` contains `type`, `message`, `http_status`, `api_code`, and `raw_body`.
+- **Success**: `data` holds the normalized view plus `raw` (the unmodified 17TRACK payload) and `error` is `null`. The normalized shape depends on the command: `get` has `summary`, `check`/`list` have `count` and `items`, `register` has `accepted`/`rejected`.
+- **Failure**: `data` is `null`; `error` contains `type`, `message`, and, for API failures, `http_status`, `api_code`, and `raw_body` (truncated to 2000 characters).
 
 ### Summary Fields
 

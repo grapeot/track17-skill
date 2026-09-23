@@ -62,8 +62,19 @@ def load_key(env_file=None) -> str:
             if path.is_file():
                 for line in path.read_text(encoding="utf-8").splitlines():
                     line = line.strip()
+                    if line.startswith("export "):
+                        line = line[len("export "):].lstrip()
                     if line.startswith(ENV_KEY_NAME + "="):
-                        value = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        value = line.split("=", 1)[1].strip()
+                        if value[:1] in ('"', "'"):
+                            quote = value[0]
+                            end = value.find(quote, 1)
+                            value = value[1:end] if end != -1 else value.strip(quote)
+                        else:
+                            hash_pos = value.find(" #")
+                            if hash_pos != -1:
+                                value = value[:hash_pos].rstrip()
+                        value = value.strip()
                         if value:
                             return value
         except OSError:
@@ -111,3 +122,7 @@ def api_call(endpoint: str, payload, key: str, timeout: float = 60):
         raise ApiError(exc.code, api_code, str(message), raw) from None
     except urllib.error.URLError as exc:
         raise NetworkError(str(exc.reason)) from None
+    except OSError as exc:
+        # Read timeouts escape urllib's OSError->URLError wrapper inside
+        # http.client; TimeoutError/socket.timeout are OSError subclasses.
+        raise NetworkError(str(exc) or "network failure or timeout") from None

@@ -6,7 +6,7 @@
 # setup (Python 3.9+; 3.12 recommended)
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .
+pip install -e ".[dev]"
 
 # run the CLI
 python -m track17_skill <subcommand>

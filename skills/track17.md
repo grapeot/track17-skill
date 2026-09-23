@@ -46,7 +46,8 @@ All subcommands emit a JSON object with fixed top-level keys to standard output:
 ```
 
 - **Success**: `data.summary` provides the normalized payload (carrier, main status, sub-status, timestamps, and up to 15 recent events); `data.raw` preserves the untouched upstream 17TRACK response; `error` is `null`.
-- **Failure**: `data` is `null`; `error` contains `type`, `message`, `http_status`, `api_code`, and `raw_body`.
+- **Success**: `data` holds the normalized view plus `raw` (the unmodified 17TRACK payload). Shape varies by command: `get` → `summary`, `check`/`list` → `count` + `items`, `register` → `accepted`/`rejected`.
+- **Failure**: `data` is `null`; `error` contains `type` and `message`, plus `http_status`, `api_code`, and `raw_body` (truncated to 2000 chars) for API failures.
 
 ### Exit Codes
 
@@ -57,7 +58,7 @@ All subcommands emit a JSON object with fixed top-level keys to standard output:
 | `10` | Auth Failure | Invalid API key, IP whitelist restriction, or disabled account. Prompt user. |
 | `11` | Quota / Rate | HTTP 429 or quota exhaustion. Halt polling; notify user. |
 | `12` | Request Rejected | Actionable rejection (unregistered number, invalid carrier, no data yet). |
-| `13` | Server / Network | Network connectivity failure or 17TRACK internal service error (HTTP 5xx). Retry later. |
+| `13` | Server / Network | Network connectivity failure (including read timeouts) or 17TRACK internal service error (`-18010003`). Retry later. |
 
 ## Knowledge
 

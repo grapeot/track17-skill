@@ -13,8 +13,8 @@ No network, no API key. Covers:
 - normalization against a real (anonymized) v2.4 response fixture:
   status, sub_status, carrier, service_type, route, latest_event,
   days_since_last_update, event cap (15) and newest-first ordering
-- key loading precedence: `SEVENTEENTRACK_KEY` env var > `.env` in cwd >
-  explicit `--env-file` > error
+- key loading precedence: `SEVENTEENTRACK_KEY` env var > explicit
+  `--env-file` > `.env` in cwd > error
 - `run_api` with the transport monkeypatched (success envelope carries
   `data.raw`; failures carry `error.raw_body`)
 - offline carrier lookup (search / by_code / count / no-match)
