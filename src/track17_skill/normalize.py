@@ -24,9 +24,18 @@ def _time_text(event: dict):
     return t or event.get("time_iso")
 
 
+def _weight(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return value
+
+
 def _events_from_provider(provider: dict) -> list:
     events = []
     for e in provider.get("events") or []:
+        if not isinstance(e, dict):
+            continue
         events.append(
             {
                 "time": _time_text(e),
@@ -51,6 +60,8 @@ def summarize_gettrackinfo(response: dict, max_events: int = MAX_EVENTS) -> dict
     if not accepted:
         return {"summary": None, "rejected": rejected}
     a = accepted[0]
+    if not isinstance(a, dict):
+        return {"summary": None, "rejected": rejected}
     ti = a.get("track_info") or {}
     latest = ti.get("latest_status") or a.get("latest_status") or {}
     ships = ti.get("shipping_info") or {}
@@ -62,6 +73,8 @@ def summarize_gettrackinfo(response: dict, max_events: int = MAX_EVENTS) -> dict
 
     events, total, tips, name, service = [], 0, None, None, None
     for prov in providers:
+        if not isinstance(prov, dict):
+            continue
         name = name or (prov.get("provider") or {}).get("name")
         tips = tips or prov.get("provider_tips")
         service = service or prov.get("service_type")
@@ -76,7 +89,7 @@ def summarize_gettrackinfo(response: dict, max_events: int = MAX_EVENTS) -> dict
         "status": latest.get("status"),
         "sub_status": latest.get("sub_status"),
         "service_type": service or misc.get("service_type"),
-        "weight_kg": misc.get("weight_kg"),
+        "weight_kg": _weight(misc.get("weight_kg")),
         "route": {
             "origin": _loc_text(shipper),
             "destination": _loc_text(recipient),
@@ -102,6 +115,7 @@ def summarize_gettracklist(response: dict, max_items: int = 40) -> dict:
             "sync_status": a.get("sync_status"),
         }
         for a in accepted
+        if isinstance(a, dict)
     ]
     return {"count": len(accepted), "items": items, "rejected": data.get("rejected") or []}
 
