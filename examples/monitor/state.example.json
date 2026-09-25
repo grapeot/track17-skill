@@ -1,0 +1,9 @@
+{
+  "tracking_number": "TRACKING_NUMBER",
+  "last_checked_utc": null,
+  "last_status": null,
+  "last_event_summary": null,
+  "runs": [],
+  "terminal": false,
+  "stop_reason": null
+}
