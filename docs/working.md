@@ -23,6 +23,14 @@
   - Scheduler verification before user sign-off added as an explicit
     acceptance criterion — unverified schedules were the main silent
     failure mode observed.
+- Live validation of the whole recipe (2026-09-25, SHOSU parcel): the skill
+  caught two additional traps during a real setup, folded into Known Traps:
+  - The prompt's scheduling note claimed a periodic job that had never been
+    registered; the verification step caught it. Lesson recorded: register
+    the schedule yourself, never trust claims without a scheduler record.
+  - process-launcher periodic jobs have no end-date field; terminal
+    conditions must be enforced by the agent (disable + reload on/after the
+    end date), which the prompt template now instructs.
 
 ## 2026-09-23 — v0.1.0
 
