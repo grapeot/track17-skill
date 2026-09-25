@@ -81,6 +81,8 @@ All of these were observed in real setup runs (September 2026). Do not re-derive
 | Agent output without artifact | Headless agent prints JSON to stdout but leaves the result file empty | Verify the artifact on disk, fall back to stdout extraction per the agent CLI's contract, retry bounded |
 | "No scans yet" treated as an error | A freshly registered number can legitimately show `InfoReceived` with zero events for days | Report as pending state, never as tool failure; do not poll aggressively |
 | Scheduler created but never verified | A prompt file plus a hope is not a monitor; silent non-firing schedules are the most common silent failure | Always run the one-off verification trigger before telling the user it works |
+| Prompt claims the schedule exists before it does | A prompt's "scheduling note" described a periodic job that was never registered; nothing would have fired | The setup agent registers the schedule itself, then verifies per the row above — never trust a claim (yours included) without a launcher/API record |
+| Scheduler has no end-date field | A daily periodic job cannot express "stop after 2026-10-01" declaratively | Enforce the end condition in the task prompt: on/after the end date (or terminal state) the agent disables the job via the scheduler's supported mechanism and reloads, instead of reporting. State this limitation to the user at setup |
 | Notification failure treated as monitor failure | Track data was fine; the send step failed (credentials, recipient policy) | Log which stage failed; the daily "status" email and the send pipeline are separately verifiable |
 
 ## When NOT To Use This Skill
