@@ -24,7 +24,7 @@ Use whenever an automated workflow or user inquiry requires verifying package de
 |---|---|---|
 | `check` | None | Validates API credentials and lists registered tracking numbers. Free (consumes no quota). |
 | `register` | `NUMBER [--carrier CODE] [--origin-country CC] [--lang LANG] [--ship-date YYYY-MM-DD] [--destination-postal-code XX]` | Registers package for continuous tracking. Auto-detects carrier if `--carrier` omitted. Consumes 1 quota unit on initial registration; re-registering is a free no-op. |
-| `get` | `NUMBER [--carrier CODE] [--lang LANG] [--auto-register]` | Retrieves current tracking details. Free for registered numbers. With `--auto-register`, automatically registers first if unregistered (`-18019902`). |
+| `get` | `NUMBER [--carrier CODE] [--lang LANG] [--auto-register]` | Retrieves current tracking details. Free for registered numbers. `--auto-register` is intended to auto-register unregistered numbers, but in a live run (2026-09-25) the API still returned `-18019902`; prefer an explicit `register` first |
 | `list` | `[--status STATUS] [--page N] [--number NUMBER]` | Queries registered tracking numbers via `/gettracklist`. Free. |
 | `carriers search` | `QUERY` | Searches the bundled 3,523 carrier database offline. No key or network required. |
 | `carriers get` | `CODE` | Retrieves carrier metadata by numeric code from the offline database. Free and offline. |

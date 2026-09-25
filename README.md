@@ -153,7 +153,7 @@ The command terminates with exit code `0`.
 |---|---|---|
 | `check` | Validate API key and list registered tracking numbers | Free (does not consume quota) |
 | `register NUMBER [--carrier CODE] [--origin-country CC] [--lang LANG] [--ship-date YYYY-MM-DD] [--destination-postal-code XX]` | Register a number. Without `--carrier`, 17TRACK auto-detects the carrier | First-time register: 1 quota unit. Re-registering an already-registered number is a no-op |
-| `get NUMBER [--carrier CODE] [--lang LANG] [--auto-register]` | Fetch tracking status. `--auto-register` registers unregistered numbers (`-18019902`) automatically | Free for registered numbers |
+| `get NUMBER [--carrier CODE] [--lang LANG] [--auto-register]` | Fetch tracking status. `--auto-register` is intended to register unregistered numbers (`-18019902`) automatically; in a live run (2026-09-25) it still returned `-18019902`, so prefer an explicit `register` first | Free for registered numbers |
 | `list [--status STATUS] [--page N] [--number NUMBER]` | List registered numbers and statuses via `/gettracklist` | Free |
 | `carriers search QUERY`<br>`carriers get CODE` | Look up carrier codes in bundled offline database (3,523 carriers) | Offline, no API key needed |
 
@@ -229,10 +229,15 @@ Each is refined by one of 30 sub-statuses (e.g., `InTransit_PickedUp`, `InTransi
 
 `track17` is designed for autonomous tools and AI coding assistants. Structured JSON envelopes and deterministic exit codes allow agents to process parcel queries directly without prose scraping.
 
-This repository includes an agent skill document at `skills/track17.md`. To install it into an agent environment:
+This repository includes two agent skill documents:
+
+- `skills/track17.md` — the core skill: commands, quota mechanics, error-code recovery, carrier disambiguation.
+- `skills/monitoring.md` — recurring monitoring ("check it every morning and email me"): how an agent should inventory the user's runtime, write a task prompt instead of a program, and verify the schedule before trusting it. Comes with a worked reference implementation under `examples/monitor/`.
+
+To install into an agent environment:
 
 1. Point your coding agent (Claude Code, Cursor, OpenCode, Codex, etc.) to this repository URL.
-2. Direct the agent to install `skills/track17.md` into your workspace's skill directory.
+2. Direct the agent to install `skills/track17.md` (core tracking) and, when the user asks for recurring monitoring, `skills/monitoring.md` as well.
 
 The skill document equips the agent with knowledge of quota mechanics, error code recovery flows, and carrier disambiguation rules.
 
