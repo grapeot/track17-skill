@@ -23,7 +23,7 @@
   - Scheduler verification before user sign-off added as an explicit
     acceptance criterion — unverified schedules were the main silent
     failure mode observed.
-- Live validation of the whole recipe (2026-09-25, SHOSU parcel): the skill
+- Live validation of the whole recipe (2026-09-25, a real parcel monitor): the skill
   caught two additional traps during a real setup, folded into Known Traps:
   - The prompt's scheduling note claimed a periodic job that had never been
     registered; the verification step caught it. Lesson recorded: register

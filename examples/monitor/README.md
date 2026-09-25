@@ -43,7 +43,7 @@ first use.
 ```bash
 # 1. Facts + registration (consumes 1 quota unit on first registration)
 python -m track17_skill register TRACKING_NUMBER --carrier 100003 \
-  --origin-country NL --destination-postal-code 98027 --ship-date 2026-09-17
+  --origin-country CC --destination-postal-code ZIPCODE --ship-date YYYY-MM-DD
 
 # 2. Sanity: does data flow?
 python -m track17_skill get TRACKING_NUMBER --carrier 100003
