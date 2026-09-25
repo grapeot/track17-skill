@@ -6,3 +6,7 @@ __pycache__/
 .pytest_cache/
 dist/
 build/
+
+# private per-parcel working files (never commit)
+examples/monitor/*_shosu*
+examples/monitor/state_shosu.json
